@@ -2,7 +2,7 @@
 
 CREATE TABLE Roles (
     role_id SERIAL PRIMARY KEY,
-	type VARCHAR(50) NOT null,
+	type VARCHAR(50) NOT NULL CHECK (type IN ('admin', 'manager', 'client', 'delivery_person')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
@@ -37,7 +37,7 @@ CREATE TABLE Category (
 -- Parent table 
 CREATE TABLE Product (
 	product_id SERIAL primary key,
-	status VARCHAR(50) not null,
+	status VARCHAR(50) NOT NULL CHECK (status IN ('active', 'inactive', 'discontinued')),
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     category_id INTEGER not null,
@@ -104,6 +104,7 @@ CREATE TABLE Order_Status_History (
     order_Status_History_id SERIAL PRIMARY KEY,
     status TEXT NOT NULL CHECK (status IN ('pending', 'paid', 'processing', 'shipped', 'cancelled')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    changed_by_type VARCHAR(10) CHECK (changed_by_type IN ('user', 'system')),
     order_id INTEGER not null,
     changed_by_user_id INTEGER,
     changed_by_email TEXT,
@@ -192,9 +193,9 @@ CREATE TABLE Cart_Items(
 CREATE TABLE Payment(
     payment_id SERIAL PRIMARY KEY,
     amount DECIMAL(10,2) NOT NULL CHECK (amount > 0),
-	method_type VARCHAR(50), 
-	stripe_reference TEXT UNIQUE, 
-	status VARCHAR(50),
+	 method_type VARCHAR(50) NOT NULL CHECK (method_type IN ('card', 'bank_account', 'apple_pay', 'google_pay')),
+    stripe_reference TEXT UNIQUE,
+	status VARCHAR(50) NOT NULL CHECK (status IN ('pending', 'completed', 'failed', 'refunded')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     order_id INTEGER not null,
