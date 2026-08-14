@@ -8,9 +8,16 @@
     - Results should be grouped by category name
  */
 
-
 -- your query here
-
+SELECT
+name AS category,
+COUNT(filCat.film_id) AS film_count
+FROM film_category AS filCat
+INNER JOIN category
+ON category.category_id=filCat.category_id
+INNER JOIN film
+ON film.film_id=filCat.film_id
+GROUP BY name
 
  /*
     Challenge 2.
@@ -23,8 +30,16 @@
 
  -- your query here
 
-
-
+SELECT
+first_name,
+last_name,
+SUM(payment.amount) AS total_spent
+FROM customer
+INNER JOIN payment
+	ON customer.customer_id=payment.customer_id
+GROUP BY customer.customer_id
+ORDER BY total_spent DESC
+LIMIT 5
 
 /*
     Challenge 3.
@@ -37,7 +52,15 @@
 
 
 -- your query here
-
+SELECT
+film.title
+FROM inventory
+INNER JOIN rental
+	ON rental.inventory_id=inventory.inventory_id
+INNER JOIN film
+	ON film.film_id=inventory.film_id
+WHERE rental.rental_date::date >=CURRENT_DATE -interval '10 years'
+GROUP BY film.title
 
 /*
     Challenge 4.
@@ -50,7 +73,15 @@
 
 -- your query here
 
-
+SELECT
+film.title,
+inventory.inventory_id
+FROM inventory
+LEFT JOIN rental
+	ON inventory.inventory_id=rental.inventory_id
+INNER JOIN film
+	ON film.film_id=inventory.film_id
+WHERE rental.rental_date::date IS NULL
 
 
 /*
@@ -60,6 +91,24 @@
     - title should display the name of each film
     - rental_count should show the total number of times the film was rented
 */
+WITH rental_count_film AS(SELECT
+film.title,
+count (rental.inventory_id) AS rental_count
+FROM inventory
+INNER JOIN rental
+	ON inventory.inventory_id=rental.inventory_id
+INNER JOIN film
+	ON film.film_id=inventory.film_id
+GROUP BY film.film_id
+ORDER BY rental_count
+)
+
+
+SELECT 
+rental_count_film.title,
+rental_count
+FROM rental_count_film 
+WHERE rental_count> (SELECT AVG(rental_count) FROM rental_count_film );
 
 
 
@@ -76,6 +125,18 @@
 */
 
 -- your query here
+SELECT 
+first_name,
+last_name,
+MIN(rental.rental_date) AS first_rental,
+MAX(rental.rental_date) AS last_rental,
+MAX(rental.rental_date)::date  - MIN(rental.rental_date)::date AS rental_span_days
+FROM
+customer 
+INNER JOIN rental 
+	ON rental.customer_id=customer.customer_id
+GROUP BY customer.customer_id
+ORDER BY rental_span_days DESC
 
 /*
     Challenge 7.
@@ -86,6 +147,30 @@
 
 
 -- your query here
+
+/* How many categories exists*/
+
+WITH sum_total_categories AS(SELECT COUNT (name) AS total_categories
+FROM category)
+
+
+SELECT 
+first_name,
+last_name,
+COUNT(DISTINCT category.category_id) AS genres_rented
+FROM customer
+INNER JOIN rental
+	ON rental.customer_id=customer.customer_id
+INNER JOIN inventory
+	ON inventory.inventory_id=rental.inventory_id
+INNER JOIN film_category 
+	ON film_category.film_id=inventory.film_id
+INNER JOIN category
+	ON category.category_id=film_category.category_id
+GROUP BY customer.customer_id
+HAVING COUNT(DISTINCT category.category_id)<(SELECT total_categories FROM sum_total_categories)
+
+
 
 
 /*
@@ -111,6 +196,38 @@
 
 -- your work here
 
+--======================================================
+-- Author: Camila Mamani
+-- Date: 13 August 2026
+-- Description: Materialized view of Revenue By Category
+--======================================================
+CREATE MATERIALIZED VIEW revenue_by_category AS (SELECT 
+category.name AS category,
+SUM(payment.amount) AS total_revenue
+FROM payment
+INNER JOIN rental
+	ON payment.rental_id=rental.rental_id
+INNER JOIN inventory
+	ON inventory.inventory_id=rental.inventory_id
+INNER JOIN film_category 
+	ON film_category.film_id=inventory.film_id
+INNER JOIN category
+	ON category.category_id=film_category.category_id
+GROUP BY category.category_id
+ORDER BY total_revenue DESC)
+---
+SELECT * FROM revenue_by_category;
+---
+SELECT * FROM revenue_by_category
+ORDER BY total_revenue DESC
+LIMIT 3;
+
+---
+REFRESH MATERIALIZED VIEW revenue_by_category;
 
 
+--When would you prefer a materialized view over a regular view? 
+--two factors: you don't need instant freshness, and the underlying query is expensive enough that running it on every call would cost real performance.
 
+--How often should it be refreshed?
+--As a stored snapshot that only updates when refreshed (manually or via a scheduled trigger), and how stale it's allowed to get depends on the use case.
