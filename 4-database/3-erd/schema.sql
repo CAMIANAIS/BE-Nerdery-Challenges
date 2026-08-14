@@ -18,7 +18,7 @@ CREATE TABLE Users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     role_id INTEGER not NULL,
     password_hash TEXT NOT NULL, 
-    reset_token TEXT,
+    reset_token_hash TEXT,
     reset_token_expires TIMESTAMP,
                -- Foreign Key to Roles
     CONSTRAINT fk_bridge_Roles FOREIGN KEY (role_id) 
@@ -87,7 +87,7 @@ CREATE TABLE Product_Images (
 
 CREATE TABLE Orders(
     order_id SERIAL PRIMARY KEY,
-    total_amount DECIMAL(10,2) not null,
+    total_amount DECIMAL(10,2) NOT NULL CHECK (total_amount >= 0),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     user_id INTEGER not null,
@@ -102,10 +102,11 @@ CREATE TABLE Orders(
 
 CREATE TABLE Order_Status_History (
     order_Status_History_id SERIAL PRIMARY KEY,
-    status TEXT not NULL,
+    status TEXT NOT NULL CHECK (status IN ('pending', 'paid', 'processing', 'shipped', 'cancelled')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     order_id INTEGER not null,
-    user_id INTEGER,
+    changed_by_user_id INTEGER,
+    changed_by_email TEXT,
           -- Foreign Key to orders
         CONSTRAINT fk_Orders FOREIGN KEY (order_id) 
         REFERENCES Orders(order_id) 
@@ -113,7 +114,7 @@ CREATE TABLE Order_Status_History (
         ON UPDATE cascade,
         
           -- Foreign Key to user
-    CONSTRAINT fk_bridge_users FOREIGN KEY (user_id) 
+    CONSTRAINT fk_bridge_users FOREIGN KEY (changed_by_user_id) 
         REFERENCES Users(user_id) 
         ON DELETE set NULL 
         ON UPDATE CASCADE
@@ -134,16 +135,16 @@ CREATE TABLE Product_Variant (
         ON UPDATE CASCADE
 );
 
-
+-- Order_Items: prevent same variant twice in one order
 CREATE TABLE Order_Items (
     order_items_id SERIAL PRIMARY KEY,
-    quantity INTEGER not null,
-    price_at_purchase DECIMAL(10,2) not null,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    price_at_purchase DECIMAL(10,2) NOT NULL CHECK (price_at_purchase >= 0),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     order_id INTEGER not null,
     product_variant_id INTEGER not null,
-    
+    UNIQUE (order_id, product_variant_id),
         CONSTRAINT fk_Product_Variant FOREIGN KEY (product_variant_id) 
         REFERENCES Product_Variant (product_variant_id) 
         ON DELETE RESTRICT  
@@ -167,16 +168,16 @@ CREATE TABLE Cart(
         ON UPDATE CASCADE
     
 );
-
+-- Cart_Items: prevent same variant twice in one cart
 CREATE TABLE Cart_Items(
     cart_items_id SERIAL PRIMARY KEY,
-    quantity INTEGER not null,
-    price_at_purchase DECIMAL(10,2) not null,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    price_at_purchase DECIMAL(10,2) NOT NULL CHECK (price_at_purchase >= 0),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     product_variant_id INTEGER not null,
     cart_id INTEGER not null,
-    
+    UNIQUE (cart_id, product_variant_id),
         CONSTRAINT fk_Product_Variant FOREIGN KEY (product_variant_id) 
         REFERENCES Product_Variant (product_variant_id) 
         ON DELETE RESTRICT  
@@ -190,9 +191,9 @@ CREATE TABLE Cart_Items(
 
 CREATE TABLE Payment(
     payment_id SERIAL PRIMARY KEY,
-    amount DECIMAL(10,2) not null,
+    amount DECIMAL(10,2) NOT NULL CHECK (amount > 0),
 	method_type VARCHAR(50), 
-	stripe_reference TEXT , 
+	stripe_reference TEXT UNIQUE, 
 	status VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -206,7 +207,7 @@ CREATE TABLE Payment(
 
 CREATE TABLE Prices_History (
     prices_History_id SERIAL PRIMARY KEY,
-    price DECIMAL(10, 2) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
     effective_from TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     product_variant_id INTEGER not null,
