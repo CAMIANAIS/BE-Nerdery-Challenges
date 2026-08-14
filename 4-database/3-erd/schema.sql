@@ -108,6 +108,7 @@ CREATE TABLE Order_Status_History (
     order_id INTEGER not null,
     changed_by_user_id INTEGER,
     changed_by_email TEXT,
+    
           -- Foreign Key to orders
         CONSTRAINT fk_Orders FOREIGN KEY (order_id) 
         REFERENCES Orders(order_id) 
