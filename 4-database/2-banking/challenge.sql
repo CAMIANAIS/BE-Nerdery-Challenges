@@ -41,3 +41,89 @@
 
 
 -- your solution here
+
+--======================================================
+-- Author: Camila Mamani
+-- Date: 13 August 2026
+-- Description: Function for transfering in a secure way
+--======================================================
+CREATE FUNCTION banking.transfer_funds(from_id INT, to_id INT, amount NUMERIC) 
+RETURNS UUID AS $$ 
+DECLARE
+ sender_balance NUMERIC; 
+ sender_status TEXT;
+ recipient_status TEXT;
+ transaction_ref UUID;
+BEGIN
+IF from_id=to_id
+THEN RAISE EXCEPTION 'same account';
+END IF;
+IF amount <= 0
+THEN RAISE EXCEPTION 'transfer amount is zero';
+END IF;
+
+SELECT 
+balance,
+status
+INTO 
+sender_balance,
+sender_status
+FROM banking.accounts
+WHERE account_id=from_id;
+
+
+SELECT
+status
+INTO 
+recipient_status
+FROM banking.accounts
+WHERE account_id=to_id;
+
+
+
+IF
+sender_status IS NULL OR
+recipient_status IS NULL
+THEN RAISE EXCEPTION
+'account do not exist'
+;
+END IF
+;
+
+IF
+sender_status='frozen' OR
+recipient_status='frozen'
+THEN RAISE EXCEPTION
+'account is frozen'
+;
+END IF
+;
+
+IF
+sender_balance<amount
+THEN RAISE EXCEPTION
+'sender has insufficient funds'
+;
+END IF
+;
+
+transaction_ref := gen_random_uuid();
+
+UPDATE banking.accounts
+SET balance =balance - amount
+WHERE account_id = from_id;
+
+UPDATE banking.accounts
+SET balance=balance +amount
+WHERE account_id = to_id;
+
+INSERT INTO banking.transactions (account_id, amount, transaction_type, reference, transaction_date)
+VALUES(to_id,amount,'deposit',transaction_ref,NOW());
+
+INSERT INTO banking.transactions (account_id, amount, transaction_type, reference, transaction_date)
+VALUES(from_id,amount,'withdrawal',transaction_ref,NOW());
+
+RETURN transaction_ref;
+
+END;
+$$ LANGUAGE plpgsql;
