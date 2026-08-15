@@ -201,7 +201,7 @@ CREATE TABLE Cart_Items(
 CREATE TABLE Payment(
     payment_id SERIAL PRIMARY KEY,
     amount DECIMAL(10,2) NOT NULL CHECK (amount > 0),
-	 method_type VARCHAR(50) NOT NULL CHECK (method_type IN ('card', 'bank_account', 'apple_pay', 'google_pay')),
+	 method_type VARCHAR(50) NOT NULL CHECK (method_type IN ('card','bank_account','apple_pay','google_pay','payment_link','payment_intent')),
     stripe_reference TEXT UNIQUE,
 	status VARCHAR(50) NOT NULL CHECK (status IN ('pending', 'completed', 'failed', 'refunded')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
