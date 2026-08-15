@@ -50,7 +50,7 @@
 CREATE FUNCTION banking.transfer_funds(from_id INT, to_id INT, amount NUMERIC) 
 RETURNS UUID AS $$ 
 DECLARE
- sender_balance NUMERIC; 
+ sender_balance NUMERIC; 
  sender_status TEXT;
  recipient_status TEXT;
  transaction_ref UUID;
