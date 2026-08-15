@@ -17,7 +17,7 @@ INNER JOIN category
 ON category.category_id=filCat.category_id
 INNER JOIN film
 ON film.film_id=filCat.film_id
-GROUP BY name
+GROUP BY name;
 
  /*
     Challenge 2.
@@ -39,7 +39,7 @@ INNER JOIN payment
 	ON customer.customer_id=payment.customer_id
 GROUP BY customer.customer_id
 ORDER BY total_spent DESC
-LIMIT 5
+LIMIT 5;
 
 /*
     Challenge 3.
@@ -60,7 +60,7 @@ INNER JOIN rental
 INNER JOIN film
 	ON film.film_id=inventory.film_id
 WHERE rental.rental_date::date >=CURRENT_DATE -interval '10 years'
-GROUP BY film.title
+GROUP BY film.title;
 
 /*
     Challenge 4.
@@ -81,7 +81,7 @@ LEFT JOIN rental
 	ON inventory.inventory_id=rental.inventory_id
 INNER JOIN film
 	ON film.film_id=inventory.film_id
-WHERE rental.rental_date::date IS NULL
+WHERE rental.rental_date::date IS NULL;
 
 
 /*
@@ -136,7 +136,7 @@ customer
 INNER JOIN rental 
 	ON rental.customer_id=customer.customer_id
 GROUP BY customer.customer_id
-ORDER BY rental_span_days DESC
+ORDER BY rental_span_days DESC;
 
 /*
     Challenge 7.
@@ -168,7 +168,7 @@ INNER JOIN film_category
 INNER JOIN category
 	ON category.category_id=film_category.category_id
 GROUP BY customer.customer_id
-HAVING COUNT(DISTINCT category.category_id)<(SELECT total_categories FROM sum_total_categories)
+HAVING COUNT(DISTINCT category.category_id)<(SELECT total_categories FROM sum_total_categories);
 
 
 
@@ -214,7 +214,7 @@ INNER JOIN film_category
 INNER JOIN category
 	ON category.category_id=film_category.category_id
 GROUP BY category.category_id
-ORDER BY total_revenue DESC)
+ORDER BY total_revenue DESC);
 ---
 SELECT * FROM revenue_by_category;
 ---
