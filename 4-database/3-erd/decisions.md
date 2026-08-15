@@ -15,6 +15,9 @@ Decision: Standard security. password_hash is for login. reset_token_hash is for
 7. CHECK constraints on amounts and quantities
 Decision: Let the database enforce. Quantity > 0 because zero in a cart makes no sense. Payment amount > 0 because money has to move. Price >= 0 because free items happen. This catches mistakes early and prevents bad data from ever getting in.
 
-8. What I am going to work next week changed_by_type without a constraint linking it to the fields is performative. Nothing stops contradictory data. Also a real gap. In the real world, shipped ≠ delivered. A package ships and then arrives. The flow should be:
-pending → paid → processing → shipped → delivered → (can cancel at any point)
-Decision: Add 'delivered'. Updated CHECK above.And finally this one I need to decide: Do we add an Address table. Two last are for the optional part.
+8. Order status flow now includes 'delivered'
+Decision: Add delivered state. The full flow is pending → paid → processing → shipped → delivered, then cancelled is possible at any point. Shipped and delivered are different, shipped means it left the warehouse, delivered means it arrived. Both matter
+
+9. Adress Decision: Let users save multiple addresses. A user can have as many shipping addresses and billing addresses as they want. But only one can be marked as default. I use a partial unique index, it only checks the rows marked default, and makes sure there's only one default per address type. Non-default addresses don't get checked, so users can have as many as you need.
+
+10.  Added a CHECK constraint that enforces: if changed_by_type = 'user', changed_by_email must always be recorded. The changed_by_user_id can go null if the user is deleted — that's fine. If changed_by_type = 'system', both fields stay null. The email is the durable identifier that keeps the audit trail meaningful. The user_id is just a convenience link. This way you can delete a user without breaking the historical record.

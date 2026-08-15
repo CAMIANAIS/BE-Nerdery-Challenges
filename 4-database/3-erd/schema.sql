@@ -102,14 +102,21 @@ CREATE TABLE Orders(
 
 CREATE TABLE Order_Status_History (
     order_Status_History_id SERIAL PRIMARY KEY,
-    status TEXT NOT NULL CHECK (status IN ('pending', 'paid', 'processing', 'shipped', 'cancelled')),
+    status TEXT NOT NULL CHECK (status IN ('pending', 'paid', 'processing', 'shipped', 'cancelled','delivered')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     changed_by_type VARCHAR(10) CHECK (changed_by_type IN ('user', 'system')),
     order_id INTEGER not null,
     changed_by_user_id INTEGER,
     changed_by_email TEXT,
     
-          -- Foreign Key to orders
+    CHECK (
+      (changed_by_type = 'user' AND changed_by_email IS NOT NULL)
+      OR
+      (changed_by_type = 'system' AND changed_by_user_id IS NULL AND changed_by_email IS NULL)
+      OR
+      (changed_by_type IS NULL)
+    ),
+    -- Foreign Key to orders
         CONSTRAINT fk_Orders FOREIGN KEY (order_id) 
         REFERENCES Orders(order_id) 
         ON DELETE CASCADE  
@@ -220,6 +227,25 @@ CREATE TABLE Prices_History (
         ON UPDATE CASCADE
 );
 
-
+CREATE TABLE Address (
+    address_id SERIAL PRIMARY KEY,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('shipping', 'billing')),
+    street VARCHAR(100) NOT NULL,
+    city VARCHAR(50) NOT NULL,
+    postal_code VARCHAR(20) NOT NULL,
+    country VARCHAR(50) NOT NULL,
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    user_id INTEGER NOT NULL,
+    CONSTRAINT fk_Users FOREIGN KEY (user_id) 
+        REFERENCES Users(user_id) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
+    
+);
+CREATE UNIQUE INDEX idx_one_default_address_per_type 
+ON Address(user_id, type) 
+WHERE is_default = TRUE;
 
 
